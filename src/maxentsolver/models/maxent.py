@@ -36,12 +36,17 @@ class MaxEnt(nn.Module):
     # ==================== EXPLICITLY FORWARD EVERYTHING ====================
     def fit(self, *args, **kwargs):
         return self._model.fit(*args, **kwargs)
+    
+    def differentiable_fit(self, *args, **kwargs):
+        if self.method != "meanfield":
+            raise NotImplementedError("differentiable_fit() only available with Mean-Field")
+        return self._model.differentiable_fit(*args, **kwargs)
 
     def model_marginals(self, *args, **kwargs):
         return self._model.model_marginals(*args, **kwargs)
 
-    def interaction_matrix(self):
-        return self._model.interaction_matrix()
+    def interaction_matrix(self, **kwargs):
+        return self._model.interaction_matrix(**kwargs)
 
     def sample(self, *args, **kwargs):
         if self.method != "mcmc":

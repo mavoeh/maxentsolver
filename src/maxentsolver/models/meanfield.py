@@ -10,10 +10,15 @@ class MaxEntMeanField(nn.Module):
         self.h = nn.Parameter(0.1 * torch.randn(n, device=device))
         self.J = nn.Parameter(0.1 * torch.randn(n, n, device=device))
 
-    def _symmetrize_J(self):
-        J = (self.J + self.J.t()) / 2
-        J.fill_diagonal_(0)
+    def _symmetrize_J(self, J_param=None):
+        J = (self.J + self.J.t()) / 2 if J_param is None else (J_param + J_param.t()) / 2
+        J = J - torch.diag(torch.diag(J))  # zero diagonal
         return J
+    
+    def _custom_step(self, params, grads, lr):
+        # Simple gradient descent step
+        return [(p - lr * g) for p, g in zip(params, grads)]
+
     
     def get_empirical_marginals(self, data):
         data = torch.as_tensor(data, dtype=torch.float, device=self.device)
@@ -21,19 +26,38 @@ class MaxEntMeanField(nn.Module):
         cov = (data.t() @ data) / len(data)
         return mean, cov.triu(diagonal=1).flatten()
 
-    def model_marginals(self, max_iter=100, tol=1e-7, **kwargs):
-        m = torch.zeros_like(self.h)
-        J = self._symmetrize_J()
+    def model_marginals(self, max_iter=5000, tol=1e-5, use_params=None, **kwargs):
+        m = torch.tanh(self.h) if use_params is None else torch.tanh(use_params[0])
+        J = self._symmetrize_J(use_params[1] if use_params else None)
+        h = self.h if use_params is None else use_params[0]
 
         for it in range(max_iter):
-            field = self.h + J @ m
-            m_new = torch.tanh(field)
+            # Standard field
+            field = h + J @ m
+            
+            # Onsager reaction term (the magic)
+            reaction = J ** 2 @ ( m * (1 - m))
+            
+            m_new = torch.tanh(field - m * reaction)  # TAP equation
+            
             if torch.norm(m_new - m) < tol:
                 break
-            m = 0.95 * m + 0.05 * m_new          # strong damping
+                
+            m = m_new
+        
+        if it == max_iter - 1:
+            print("Warning: Mean-field did not converge within max_iter")
 
-        # Proper naive MF covariance
-        cov = torch.outer(m, m) + torch.diag(m * (1 - m))
+        # Covariance from susceptibility (much more accurate than naive MF)
+        # χ₀⁻¹ = 1 - J (1 - m²)
+        diag = 1 - m**2
+        chi_inv = torch.eye(self.n, device=self.device) - J * diag
+        chi = torch.inverse(chi_inv + 1e-6 * torch.eye(self.n, device=self.device))
+        
+        # Connected correlations
+        cov_connected = chi - torch.diag(diag)
+        cov = torch.outer(m, m) + cov_connected
+        
         return m, cov.triu(1).flatten()
 
     def fit(self, data, lr=1e-3, steps=4000, lambda_l1=1e-4):
@@ -45,8 +69,7 @@ class MaxEntMeanField(nn.Module):
             opt.zero_grad()
             model_mean, model_cov_flat = self.model_marginals()
 
-            loss = 10.0 * ((emp_mean - model_mean)**2).sum() + \
-                         ((emp_cov - model_cov_flat)**2).sum()   # down-weight cov
+            loss = ((emp_mean - model_mean)**2).sum() + ((emp_cov - model_cov_flat)**2).sum()
 
             loss += lambda_l1 * (self.h.abs().sum() + self.J.abs().sum())
             loss.backward()
@@ -56,7 +79,31 @@ class MaxEntMeanField(nn.Module):
                 print(f"Step {step:4d} | Loss {loss.item():.6f}")
 
         print("Final <m> range:", model_mean.abs().min().item(), "–", model_mean.abs().max().item())
+    
+    def differentiable_fit(self, data, lr=1e-3, steps=1000, lambda_l1=1e-4):
+        emp_mean, emp_cov = self.get_empirical_marginals(data)
 
-    def interaction_matrix(self):
-        return self._symmetrize_J().detach().cpu().numpy() + torch.diag(self.h).detach().cpu().numpy()
+        params = [self.h, self.J]  # functional parameters
 
+        for i in range(steps):
+            # Forward passes using functional params
+            model_mean, model_cov_flat = self.model_marginals(use_params=params)
+
+            # Compute loss
+            loss = ((emp_mean - model_mean)**2).sum() + \
+                ((emp_cov - model_cov_flat)**2).sum()
+
+            # Compute gradients w.r.t. functional params
+            grads = torch.autograd.grad(loss, params, create_graph=True, retain_graph=True)
+
+            # Differentiable parameter update
+            params = self._custom_step(params, grads, lr)
+    
+
+        # return functional parameters so outer loop can compute gradients
+        return loss, params
+
+
+    def interaction_matrix(self, numpy=True):
+        total = self._symmetrize_J() + torch.diag(self.h)
+        return total.detach().cpu().numpy() if numpy else total

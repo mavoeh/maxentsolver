@@ -83,5 +83,6 @@ class MaxEntMCMC(nn.Module):
             if step % 500 == 0:
                 print(f"Step {step:4d} | Loss: {loss.item():.4f}")
 
-    def interaction_matrix(self):
-        return self._symmetrize_J().detach().cpu().numpy() + torch.diag(self.h).detach().cpu().numpy()
+    def interaction_matrix(self, numpy=True):
+        total = self._symmetrize_J() + torch.diag(self.h)
+        return total.detach().cpu().numpy() if numpy else total
