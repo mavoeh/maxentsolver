@@ -85,20 +85,27 @@ class MaxEntMeanField(nn.Module):
 
         params = [self.h, self.J]  # functional parameters
 
-        for i in range(steps):
+        for step in range(steps):
             # Forward passes using functional params
             model_mean, model_cov_flat = self.model_marginals(use_params=params)
 
             # Compute loss
-            loss = ((emp_mean - model_mean)**2).sum() + \
-                ((emp_cov - model_cov_flat)**2).sum()
+            loss = ((emp_mean - model_mean)**2).sum() + ((emp_cov - model_cov_flat)**2).sum()
+            loss += lambda_l1 * (params[0].abs().sum() + params[1].abs().sum())
 
             # Compute gradients w.r.t. functional params
             grads = torch.autograd.grad(loss, params, create_graph=True, retain_graph=True)
 
             # Differentiable parameter update
             params = self._custom_step(params, grads, lr)
+            params[1] = self._symmetrize_J(params[1])  # ensure symmetry
+
+            if step % 500 == 0:
+                print(f"Differentiable Step {step:4d} | Loss {loss.item():.6f}")
     
+        params[1] = self._symmetrize_J(params[1])  # ensure symmetry
+        self.h.data = params[0].data
+        self.J.data = params[1].data
 
         # return functional parameters so outer loop can compute gradients
         return loss, params
