@@ -5,14 +5,16 @@ from matplotlib.gridspec import GridSpec
 
 def plot_maxent_results(data, model, title=None):
     """
-    One clean, publication-ready figure per model with:
-    • Empirical vs Model single-neuron marginals
-    • Empirical vs Model pairwise marginals (scatter)
-    • Nice summary box at the bottom
+    Clean, publication-ready figure per model:
+    • Firing rates (emp vs model)
+    • Scatter of single-neuron marginals (emp vs model)
+    • Scatter of pairwise marginals (emp vs model)
+    • Summary box on the right
     """
     data = torch.as_tensor(data, dtype=torch.float)
     device = next(model.parameters()).device
     data = data.to(device)
+    n = data.shape[1]
 
     with torch.no_grad():
         emp_mean, emp_corr_flat = model.get_empirical_marginals(data)
@@ -26,29 +28,28 @@ def plot_maxent_results(data, model, title=None):
     emp_corr = emp_corr_flat.cpu().numpy()
     model_corr = model_corr_flat.cpu().numpy()
 
-    # R²
+    # R² scores
     r2_mean = 1 - np.sum((emp_mean - model_mean)**2) / (np.sum((emp_mean - emp_mean.mean())**2) + 1e-12)
     r2_corr = 1 - np.sum((emp_corr - model_corr)**2) / (np.sum((emp_corr - emp_corr.mean())**2) + 1e-12)
 
-    # === Plotting ===
-    plt.figure(figsize=(14, 7))
-    gs = GridSpec(2, 2, height_ratios=[3, 1], hspace=0.35)
+    # === Plotting layout ===
+    fig = plt.figure(figsize=(20, 10), constrained_layout=True)
 
-    # 1. Firing rates
-    ax1 = plt.subplot(gs[0, 0])
-    n = len(emp_mean)
-    ax1.scatter(range(n), emp_mean, c='black', s=40, label='Empirical', zorder=10)
-    ax1.scatter(range(n), model_mean, c='#1f77b4', s=30, alpha=0.9, label='Model')
-    ax1.set_ylabel("Firing probability ⟨sᵢ⟩")
-    ax1.set_title("Single-neuron marginals")
-    ax1.legend(frameon=True, fancybox=False)
+
+    ax1 = fig.add_subplot(1, 3, 1)  # dummy to initialize
+    lim_mean = max(max(abs(emp_mean)), max(abs(model_mean))) * 1.1
+    ax1.scatter(emp_mean, model_mean, s=20, c='#1f77b4', alpha=0.75, edgecolors='none')
+    ax1.plot([-lim_mean, lim_mean], [-lim_mean, lim_mean], '--', color='gray', lw=1.5)
+    ax1.set_xlim(-lim_mean, lim_mean)
+    ax1.set_ylim(-lim_mean, lim_mean)
+    ax1.set_aspect('equal', adjustable='box')
+    ax1.set_title("Empirical vs Model — Single Neuron Marginals (scatter)")
+    ax1.set_xlabel("Empirical ⟨sᵢ⟩")
+    ax1.set_ylabel("Model ⟨sᵢ⟩")
     ax1.grid(True, alpha=0.3)
-    ax1.text(0.02, 0.95, f"R² = {r2_mean:.4f}", transform=ax1.transAxes,
-             fontsize=11, verticalalignment='top',
-             bbox=dict(facecolor='white', alpha=0.9, edgecolor='none'))
 
-    # 2. Pairwise correlations
-    ax2 = plt.subplot(gs[0, 1])
+    # --- 3. Pairwise correlations (bottom-left)
+    ax2 = fig.add_subplot(1, 3, 2)
     lim = max(0.35, np.percentile(np.abs(emp_corr), 99) * 1.1)
     ax2.scatter(emp_corr, model_corr, c='#1f77b4', s=14, alpha=0.75, edgecolors='none')
     ax2.plot([-lim, lim], [-lim, lim], '--', color='gray', lw=1.5)
@@ -60,19 +61,20 @@ def plot_maxent_results(data, model, title=None):
     ax2.set_title("Pairwise marginals")
     ax2.grid(True, alpha=0.3)
     ax2.text(0.02, 0.95, f"R² = {r2_corr:.4f}", transform=ax2.transAxes,
-             fontsize=11, verticalalignment='top',
+             fontsize=11, va='top',
              bbox=dict(facecolor='white', alpha=0.9, edgecolor='none'))
 
-    # 3. Summary text box
-    ax3 = plt.subplot(gs[1, :])
-    ax3.axis('off')
+    # --- 4. Summary box (right column spanning all rows)
+    axsum = fig.add_subplot(1, 3, 3)
+    axsum.axis('off')
+
     summary = f"""
 MAXIMUM ENTROPY MODEL FIT
 
 Method              │ {model.method.upper():<12}
 Neurons (n)         │ {n:<12}
-Samples             │ {len(data):,}      
-Training device     │ {device}
+Samples             │ {len(data):<12}
+Training device     │ {device.__str__():<12}
 
 Goodness-of-fit (R²)
 ┌────────────────────────────────────────┐
@@ -80,16 +82,18 @@ Goodness-of-fit (R²)
 │ Pairwise marginals           → {r2_corr:6.4f} │
 └────────────────────────────────────────┘
 """
-    ax3.text(0.5, 0.5, summary, transform=ax3.transAxes,
-             fontsize=13, verticalalignment='center', horizontalalignment='center',
-             fontfamily='monospace',
-             bbox=dict(boxstyle="round,pad=1.2", facecolor="#f8f8f8", edgecolor="#3333", linewidth=1.5))
+    axsum.text(
+        0.5, 0.5, summary,
+        ha='center', va='center',
+        fontsize=13, fontfamily='monospace',
+        bbox=dict(boxstyle="round,pad=1.2",
+                  facecolor="#f8f8f8",
+                  edgecolor="#3339", linewidth=1.5)
+    )
 
+    # Title
     if title is None:
         title = f"MaxEnt • {model.method.upper()} • n = {n} neurons"
-    plt.suptitle(title, fontsize=18, y=0.95, weight='bold')
-
-    plt.tight_layout()
-    plt.show()
-
+    fig.suptitle(title, fontsize=18, y=0.98, weight='bold')
+    
     print(f"{model.method.upper():10} → R² rates: {r2_mean:.4f} | R² pairwise: {r2_corr:.4f}")

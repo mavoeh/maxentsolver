@@ -26,7 +26,7 @@ class MaxEntMeanField(nn.Module):
         cov = (data.t() @ data) / len(data)
         return mean, cov.triu(diagonal=1).flatten()
 
-    def model_marginals(self, max_iter=5000, tol=1e-5, use_params=None, **kwargs):
+    def model_marginals(self, max_iter=50_000, tol=1e-5, use_params=None, **kwargs):
         m = torch.tanh(self.h) if use_params is None else torch.tanh(use_params[0])
         J = self._symmetrize_J(use_params[1] if use_params else None)
         h = self.h if use_params is None else use_params[0]
@@ -39,14 +39,16 @@ class MaxEntMeanField(nn.Module):
             reaction = J ** 2 @ ( m * (1 - m))
             
             m_new = torch.tanh(field - m * reaction)  # TAP equation
+
+            error = torch.norm(m_new - m)
             
-            if torch.norm(m_new - m) < tol:
+            if error < tol:
                 break
                 
-            m = m_new
+            m = (m + m_new) / 2  # damping
         
         if it == max_iter - 1:
-            print("Warning: Mean-field did not converge within max_iter")
+            print(f"Warning: Mean-field did not converge within max_iter, error = {error.item()}")
 
         # Covariance from susceptibility (much more accurate than naive MF)
         # χ₀⁻¹ = 1 - J (1 - m²)
@@ -74,6 +76,8 @@ class MaxEntMeanField(nn.Module):
             loss += lambda_l1 * (self.h.abs().sum() + self.J.abs().sum())
             loss.backward()
             opt.step()
+
+            self.J.data = self._symmetrize_J(self.J.data)  # ensure symmetry
 
             if step % 500 == 0:
                 print(f"Step {step:4d} | Loss {loss.item():.6f}")
