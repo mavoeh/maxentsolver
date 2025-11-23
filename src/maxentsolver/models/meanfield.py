@@ -26,7 +26,7 @@ class MaxEntMeanField(nn.Module):
         cov = (data.t() @ data) / len(data)
         return mean, cov.triu(diagonal=1).flatten()
 
-    def model_marginals(self, max_iter=50_000, tol=1e-5, use_params=None, **kwargs):
+    def model_marginals(self, max_iter=50_000, tol=1e-5, use_params=None, damping=0.8, **kwargs):
         m = torch.tanh(self.h) if use_params is None else torch.tanh(use_params[0])
         J = self._symmetrize_J(use_params[1] if use_params else None)
         h = self.h if use_params is None else use_params[0]
@@ -45,7 +45,7 @@ class MaxEntMeanField(nn.Module):
             if error < tol:
                 break
                 
-            m = (m + m_new) / 2  # damping
+            m = damping * m + (1 - damping) * m_new
         
         if it == max_iter - 1:
             print(f"Warning: Mean-field did not converge within max_iter, error = {error.item()}")
