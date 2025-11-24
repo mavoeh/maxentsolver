@@ -1,17 +1,17 @@
 [project]
 name = "maxentsolver"
-version = "0.1.0"
-description = "A Python package for fitting maximum entropy models to BOLD time-series data. The toolkit automatically binarizes fMRI/BOLD signals, constructs pairwise maximum entropy (MaxEnt) models, and provides utilities to analyze the inferred interaction network."
+version = "0.1.1"
+description = "A Python package for fitting maximum entropy models to BOLD time-series data. The toolkit automatically binarizes fMRI/BOLD signals, constructs pairwise maximum entropy (MaxEnt) models, and provides utilities to analyze the inferred interaction network. Most functionality is not implemented yet."
 authors = [
     {name = "Marc Vöhringer Carrera"}
 ]
 license = {text = "MIT License"}
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
-    "torch (>=2.9.1,<3.0.0)",
-    "numpy (>=2.2.0,<3.0.0)",
-    "matplotlib (>=3.10.7,<4.0.0)",
+    "torch (>=2.0.0,<3.0.0)",
+    "numpy (>=1.0.0,<3.0.0)",
+    "matplotlib (>=1.0.0,<4.0.0)",
 ]
 
 

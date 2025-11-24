@@ -24,6 +24,9 @@ class MaxEnt(nn.Module):
         if method not in self._BACKENDS:
             raise ValueError(f"method must be one of {list(self._BACKENDS.keys())}")
         
+        if method == "mcmc":
+            print("Warning: MCMC method is not correctly implemented yet. Every contribution is welcome at 'https://github.com/mavoeh/maxentsolver'.")
+        
         self.n = n
         self.method = "mcmc" if method == "mcmc" else "meanfield"
         self._device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
