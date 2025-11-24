@@ -18,9 +18,7 @@ def plot_maxent_results(data, model, title=None):
 
     with torch.no_grad():
         emp_mean, emp_corr_flat = model.get_empirical_marginals(data)
-        model_mean, model_corr_flat = model.model_marginals(
-            batch_size=50000 if model.method == "mcmc" else None
-        )
+        model_mean, model_corr_flat = model.model_marginals()
 
     # To numpy
     emp_mean = emp_mean.cpu().numpy()
@@ -50,7 +48,7 @@ def plot_maxent_results(data, model, title=None):
 
     # --- 3. Pairwise correlations (bottom-left)
     ax2 = fig.add_subplot(1, 3, 2)
-    lim = max(0.35, np.percentile(np.abs(emp_corr), 99) * 1.1)
+    lim = max((max(abs(emp_corr)), max(abs(model_corr)))) * 1.1
     ax2.scatter(emp_corr, model_corr, c='#1f77b4', s=14, alpha=0.75, edgecolors='none')
     ax2.plot([-lim, lim], [-lim, lim], '--', color='gray', lw=1.5)
     ax2.set_xlim(-lim, lim)

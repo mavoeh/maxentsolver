@@ -4,6 +4,7 @@ import torch.nn as nn
 
 from .mcmc import MaxEntMCMC
 from .meanfield import MaxEntMeanField
+from ..utils import check_adjust_binary, binarize_data, NotBinaryError
 
 
 class MaxEnt(nn.Module):
@@ -42,6 +43,12 @@ class MaxEnt(nn.Module):
         return self._model._symmetrize_J(J_param)
     
     def fit(self, *args, **kwargs):
+        try:
+            args = list(args)
+            args[0] = check_adjust_binary(args[0])
+        except NotBinaryError:
+            print("Data is mapped to binary {-1, +1} automatically.") if kwargs.get("verbose", True) else None
+            args[0] = binarize_data(args[0], **kwargs)
         return self._model.fit(*args, **kwargs)
     
     def differentiable_fit(self, *args, **kwargs):

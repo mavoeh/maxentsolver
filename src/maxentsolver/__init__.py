@@ -1,4 +1,10 @@
-from .models.maxent import MaxEnt
-from .utils.plotting import plot_maxent_results
+from .models import MaxEnt, GenMaxEnt
+from .utils import plot_maxent_results, check_adjust_binary, binarize_data
 
-__all__ = ['MaxEnt', 'plot_maxent_results']
+__all__ = [
+    'MaxEnt',
+    'GenMaxEnt',
+    'plot_maxent_results',
+    'check_adjust_binary',
+    'binarize_data',
+]
