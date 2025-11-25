@@ -4,18 +4,19 @@ import torch.nn as nn
 
 from .mcmc import MaxEntMCMC
 from .meanfield import MaxEntMeanField
+from .pseudolikelihood import MaxEntPseudoLikelihood
 from ..utils import check_adjust_binary, binarize_data, NotBinaryError
 
 
 class MaxEnt(nn.Module):
-    """
-    Final, bulletproof wrapper. Zero recursion. Works everywhere.
-    """
     _BACKENDS = {
         "mcmc": MaxEntMCMC,
         "meanfield": MaxEntMeanField,
         "mf": MaxEntMeanField,
         "mean_field": MaxEntMeanField,
+        "pseudolikelihood": MaxEntPseudoLikelihood,
+        "pl": MaxEntPseudoLikelihood,
+        "pseudo_likelihood": MaxEntPseudoLikelihood,
     }
 
     def __init__(self, n: int, method: str = "mcmc", device=None, **kwargs):
@@ -29,11 +30,17 @@ class MaxEnt(nn.Module):
             print("Warning: MCMC method is not correctly implemented yet. Every contribution is welcome at 'https://github.com/mavoeh/maxentsolver'.")
         
         self.n = n
-        self.method = "mcmc" if method == "mcmc" else "meanfield"
         self._device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
         
         # THIS IS THE KEY: store the actual model as a regular attribute with NO special name
         self._model = self._BACKENDS[method](n=n, device=self._device, **kwargs)
+
+        if isinstance(self._model, MaxEntMCMC):
+            self.method = "MCMC"
+        elif isinstance(self._model, MaxEntMeanField):
+            self.method = "Mean-Field"
+        elif isinstance(self._model, MaxEntPseudoLikelihood):
+            self.method = "Pseudolikelihood"
 
         # Register the real model as a sub-module so PyTorch sees its parameters
         self.add_module("core", self._model)

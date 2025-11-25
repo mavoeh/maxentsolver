@@ -31,7 +31,7 @@ class MaxEntMeanField(nn.Module):
         emp_pair = (data.t() @ data) / data.shape[0]
         return mean, self._flatten_triu(emp_pair)
 
-    def _anderson(self, f, x0, tol=1e-6, max_iter=2000, damping=0.5):
+    def _anderson(self, f, x0, tol=1e-5, max_iter=2_000, damping=0.5):
         """
         Anderson acceleration for fixed-point iteration x = f(x).
         Fully detached; does NOT track autograd through iterations.
@@ -82,7 +82,7 @@ class MaxEntMeanField(nn.Module):
 
         return x, max_iter, last_err
 
-    def model_marginals(self, max_iter=5_000, tol=1e-6, use_params=None, damping=0.5):
+    def model_marginals(self, max_iter=2_000, tol=1e-5, use_params=None, damping=0.5):
         """
         Pure TAP with Anderson acceleration. No differentiable unroll.
         Returns:

@@ -3,5 +3,5 @@ from .generative import GenMaxEnt
 
 __all__ = [
     'MaxEnt',
-    'GenMaxEnt'
+    'GenMaxEnt',
 ]

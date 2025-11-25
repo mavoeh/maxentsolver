@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from matplotlib.gridspec import GridSpec
 
-def plot_maxent_results(data, model, title=None):
+def plot_maxent_results(data, model, title=None, marginals_kwargs={}):
     """
     Clean, publication-ready figure per model:
     • Firing rates (emp vs model)
@@ -18,7 +18,7 @@ def plot_maxent_results(data, model, title=None):
 
     with torch.no_grad():
         emp_mean, emp_corr_flat = model.get_empirical_marginals(data)
-        model_mean, model_corr_flat = model.model_marginals()
+        model_mean, model_corr_flat = model.model_marginals(**marginals_kwargs)
 
     # To numpy
     emp_mean = emp_mean.cpu().numpy()
@@ -41,7 +41,7 @@ def plot_maxent_results(data, model, title=None):
     ax1.set_xlim(-lim_mean, lim_mean)
     ax1.set_ylim(-lim_mean, lim_mean)
     ax1.set_aspect('equal', adjustable='box')
-    ax1.set_title("Empirical vs Model — Single Neuron Marginals (scatter)")
+    ax1.set_title("Mean marginals")
     ax1.set_xlabel("Empirical ⟨sᵢ⟩")
     ax1.set_ylabel("Model ⟨sᵢ⟩")
     ax1.grid(True, alpha=0.3)
@@ -69,10 +69,10 @@ def plot_maxent_results(data, model, title=None):
     summary = f"""
 MAXIMUM ENTROPY MODEL FIT
 
-Method              │ {model.method.upper():<12}
-Neurons (n)         │ {n:<12}
-Samples             │ {len(data):<12}
-Training device     │ {device.__str__():<12}
+Method              │ {model.method.upper():<18}
+# of Nodes (n)      │ {n:<18}
+Samples             │ {len(data):<18}
+Training device     │ {device.__str__():<18}
 
 Goodness-of-fit (R²)
 ┌────────────────────────────────────────┐

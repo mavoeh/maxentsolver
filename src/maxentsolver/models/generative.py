@@ -27,7 +27,7 @@ class GenMaxEnt(nn.Module):
         J_term = -0.5 * torch.sum((s @ self.J) * s, dim=1)
         return h_term + J_term
     
-    def generate(self, num_samples, num_sweeps=10_000, sequential=True, random_site_order=True):
+    def generate(self, num_samples, num_sweeps=1_000, sequential=True, random_site_order=True):
         """
         Gibbs / heat-bath sampler.
         If sequential=True, updates spins one site at a time (correct detailed balance).
