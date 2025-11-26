@@ -19,7 +19,7 @@ class MaxEnt(nn.Module):
         "pseudo_likelihood": MaxEntPseudoLikelihood,
     }
 
-    def __init__(self, n: int, method: str = "mcmc", device=None, **kwargs):
+    def __init__(self, n: int, method: str = "pseudolikelihood", device=None, **kwargs):
         super().__init__()
         
         method = method.lower()

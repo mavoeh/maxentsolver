@@ -79,12 +79,6 @@ class MaxEntPseudoLikelihood(nn.Module):
         total_reports=10,
         verbose=True
     ):
-        """
-        Train with pseudolikelihood.
-        - Early stopping
-        - Best-model restore
-        - Exactly total_reports prints
-        """
 
         data = torch.as_tensor(data, dtype=torch.float32, device=self.device)
         opt = torch.optim.Adam(self.parameters(), lr=lr)

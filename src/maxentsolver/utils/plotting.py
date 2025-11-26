@@ -94,4 +94,4 @@ Goodness-of-fit (R²)
         title = f"MaxEnt • {model.method.upper()} • n = {n} neurons"
     fig.suptitle(title, fontsize=18, y=0.98, weight='bold')
     
-    print(f"{model.method.upper():10} → R² rates: {r2_mean:.4f} | R² pairwise: {r2_corr:.4f}")
+    print(f"{model.method.upper():10} → R² mean: {r2_mean:.4f} | R² pairwise: {r2_corr:.4f}")
