@@ -134,7 +134,7 @@ class MaxEntMeanField(nn.Module):
         verbose=True,
         early_stop_tol=1e-6,
         patience=200,
-        total_reports=10,
+        total_reports=11,
     ):
         """
         Improved fit() with:

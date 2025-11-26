@@ -46,10 +46,10 @@ class MaxEntPseudoLikelihood(nn.Module):
         pair = (data.t() @ data) / data.shape[0]
         return mean, self._flatten_triu(pair)
 
-    def model_marginals(self, batch_size=100_000, num_sweeps=1_000, sequential=True):
+    def model_marginals(self, batch_size=100_000, num_sweeps=1_000, sequential=True, verbose=False):
         """Estimate model marginals via sampling."""
         gen = GenMaxEnt(self.h.detach(), self.J.detach(), device=self.device)
-        samples = gen.generate(num_samples=batch_size, num_sweeps=num_sweeps, sequential=sequential)
+        samples = gen.generate(num_samples=batch_size, num_sweeps=num_sweeps, sequential=sequential, verbose=verbose)
         return self.get_empirical_marginals(samples)
 
     def pseudolikelihood_loss(self, data, l2):
@@ -76,7 +76,7 @@ class MaxEntPseudoLikelihood(nn.Module):
         l2=0.0,
         patience=200,
         early_stop_tol=1e-6,
-        total_reports=10,
+        total_reports=11,
         verbose=True
     ):
 

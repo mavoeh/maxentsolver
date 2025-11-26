@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from matplotlib.gridspec import GridSpec
 
-def plot_maxent_results(data, model, title=None, marginals_kwargs={}):
+def plot_maxent_results(data, model, title=None, marginals_kwargs={}, verbose=False):
     """
     Clean, publication-ready figure per model:
     • Firing rates (emp vs model)
@@ -18,7 +18,7 @@ def plot_maxent_results(data, model, title=None, marginals_kwargs={}):
 
     with torch.no_grad():
         emp_mean, emp_corr_flat = model.get_empirical_marginals(data)
-        model_mean, model_corr_flat = model.model_marginals(**marginals_kwargs)
+        model_mean, model_corr_flat = model.model_marginals(verbose=verbose, **marginals_kwargs)
 
     # To numpy
     emp_mean = emp_mean.cpu().numpy()

@@ -27,7 +27,7 @@ class GenMaxEnt(nn.Module):
         J_term = -0.5 * torch.sum((s @ self.J) * s, dim=1)
         return h_term + J_term
     
-    def generate(self, num_samples, num_sweeps=1_000, sequential=True, random_site_order=True):
+    def generate(self, num_samples, num_sweeps=1_000, sequential=True, random_site_order=True, verbose=False):
         """
         Gibbs / heat-bath sampler.
         If sequential=True, updates spins one site at a time (correct detailed balance).
@@ -41,7 +41,8 @@ class GenMaxEnt(nn.Module):
         
         if not sequential:
             # synchronous updates (fast but may not converge to correct Gibbs distribution)
-            for _ in range(num_sweeps):
+            for sweep in range(num_sweeps):
+                print(f"Sweep {sweep+1}/{num_sweeps}", end='\r') if verbose else None
                 fields = samples @ J.t() + h.unsqueeze(0)
                 prob = torch.sigmoid(2 * fields)
                 samples = 2 * torch.bernoulli(prob) - 1
@@ -49,6 +50,7 @@ class GenMaxEnt(nn.Module):
         
         # sequential updates (recommended)
         for sweep in range(num_sweeps):
+            print(f"Sweep {sweep+1}/{num_sweeps}", end='\r') if verbose else None
             if random_site_order:
                 site_order = torch.randperm(self.n, device=device)
             else:
@@ -59,4 +61,5 @@ class GenMaxEnt(nn.Module):
                 field_i = h[i] + samples @ J[:, i]
                 prob = torch.sigmoid(2 * field_i)
                 samples[:, i] = 2 * torch.bernoulli(prob) - 1
+        print("Successfully generated samples.") if verbose else None
         return samples
