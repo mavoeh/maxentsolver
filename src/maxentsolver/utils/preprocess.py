@@ -19,7 +19,7 @@ def check_adjust_binary(data):
     raise NotBinaryError("Data must be binary with values in {0,1} or {-1,1}.")
 
 
-def binarize_data(data, z_score_threshold=0.0):
+def binarize_data(data, z_score_threshold=0.0, **kwargs):
     """
     Binarize continuous data using z-score thresholding.
     Values above the threshold become 1, below become 0.

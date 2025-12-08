@@ -6,7 +6,7 @@ from src.maxentsolver import GenMaxEnt, MaxEnt, plot_maxent_results
 n = 100
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-h = torch.randn(n) * 0.2
+h = torch.randn(n) * 0.0
 J = torch.randn(n, n) * 0.2
 J = (J + J.t()) / 2
 J.fill_diagonal_(0)
@@ -19,7 +19,7 @@ data = gen.generate(num_samples=100_000, num_sweeps=1_000, sequential=True)
 
 print("Fitting MaxEnt model using pseudolikelihood approximation...")
 model = MaxEnt(n=n, method="pseudolikelihood", device=device)
-model.fit(data, lr=1e-2, steps=2000, total_reports=2000)
+model.fit(data, lr=1e-2, steps=2000, total_reports=2000, l2=0.0)
 interaction_matrix = model.interaction_matrix()
 
 
