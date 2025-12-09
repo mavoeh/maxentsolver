@@ -80,6 +80,10 @@ class MaxEnt(nn.Module):
         return self._model.sample(*args, **kwargs)
 
     def get_empirical_marginals(self, data):
+        try:
+            data = check_adjust_binary(data)
+        except NotBinaryError:
+            data = binarize_data(data)
         return self._model.get_empirical_marginals(data)
 
     # ==================== PyTorch essentials (MUST be overridden) ====================
