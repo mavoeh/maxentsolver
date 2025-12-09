@@ -2,9 +2,11 @@ from collections import defaultdict
 import torch
 import torch.nn as nn
 
+
 from .mcmc import MaxEntMCMC
 from .meanfield import MaxEntMeanField
 from .pseudolikelihood import MaxEntPseudoLikelihood
+from .nodewisepl import MaxEntNodewisePL
 from ..utils import check_adjust_binary, binarize_data, NotBinaryError
 
 
@@ -17,6 +19,7 @@ class MaxEnt(nn.Module):
         "pseudolikelihood": MaxEntPseudoLikelihood,
         "pl": MaxEntPseudoLikelihood,
         "pseudo_likelihood": MaxEntPseudoLikelihood,
+        "nodewisepl": MaxEntNodewisePL,
     }
 
     def __init__(self, n: int, method: str = "pseudolikelihood", device=None, **kwargs):
@@ -41,6 +44,8 @@ class MaxEnt(nn.Module):
             self.method = "Mean-Field"
         elif isinstance(self._model, MaxEntPseudoLikelihood):
             self.method = "Pseudolikelihood"
+        elif isinstance(self._model, MaxEntNodewisePL):
+            self.method = "Nodewise Pseudolikelihood"
 
         # Register the real model as a sub-module so PyTorch sees its parameters
         self.add_module("core", self._model)

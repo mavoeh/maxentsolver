@@ -1,6 +1,6 @@
 [project]
 name = "maxentsolver"
-version = "0.2.2"
+version = "0.2.4"
 description = "A Python package for fitting maximum entropy models to BOLD time-series data. The toolkit automatically binarizes fMRI/BOLD signals, constructs pairwise maximum entropy (MaxEnt) models, and provides utilities to analyze the inferred interaction network. Most functionality is not implemented yet."
 authors = [
     {name = "Marc Vöhringer Carrera"}

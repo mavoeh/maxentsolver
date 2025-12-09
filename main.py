@@ -17,8 +17,8 @@ gen = GenMaxEnt(h, J, device=device)
 data = gen.generate(num_samples=100_000, num_sweeps=1_000, sequential=True)
 
 
-print("Fitting MaxEnt model using pseudolikelihood approximation...")
-model = MaxEnt(n=n, method="pseudolikelihood", device=device)
+print("Fitting MaxEnt model using nodewise pseudolikelihood approximation...")
+model = MaxEnt(n=n, method="nodewisepl", device=device)
 model.fit(data, lr=1e-2, steps=2000, total_reports=2000, l2=0.0)
 interaction_matrix = model.interaction_matrix()
 
@@ -30,5 +30,5 @@ axs[1].imshow(interaction_matrix, cmap='bwr', vmin=-0.5, vmax=0.5)
 axs[1].set_title("Inferred Interaction Matrix")
 
 # Plot results (your function from before)
-plot_maxent_results(data, model, title="Pseudolikelihood MaxEnt Model", marginals_kwargs={"num_sweeps": 1_000, "sequential": True})
+plot_maxent_results(data, model, title="Nodewise Pseudolikelihood MaxEnt Model", marginals_kwargs={"num_sweeps": 1_000, "sequential": True})
 plt.show()
